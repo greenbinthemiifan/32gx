@@ -1,0 +1,9 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes"?>
+<app version="1">
+  <name>32gx</name>
+  <coder>Green.bin</coder>
+  <version>0.1</version>
+  <release_date>20261122</release_date>
+  <short_description>Sega 32X Emulator</short_description>
+  <long_description>Sega 32X emulator for Nintendo Wii using GX hardware.</long_description>
+</app>
