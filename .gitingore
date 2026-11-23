@@ -1,0 +1,17 @@
+# Wii build outputs & temporary files
+build/
+*.elf
+*.dol
+*.map
+*.o
+*.d
+
+# IDE and Editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS specific files
+.DS_Store
+Thumbs.db
