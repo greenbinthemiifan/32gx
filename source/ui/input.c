@@ -1,10 +1,11 @@
 #include "input.h"
+#include <stdio.h>
+#include <stdlib.h>
 #include <wiiuse/wpad.h>
 #include <gccore.h>
-#include <stdlib.h>
 
 void input_init(void) {
-    // WPAD_Init() is usually called in main.c, but safe to ensure or keep here
+    // WPAD_Init() is usually called in main.c, but safe to ensure here
     WPAD_Init();
 }
 
