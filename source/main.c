@@ -24,7 +24,7 @@ int main(int argc, char **argv) {
     render_init();
 
     // 2. Initialize file browser pointing to SD card ROM directory
-    browser_init("sd:/roms");
+    browser_init("sd:/roms/32x");
 
     AppState state = APP_STATE_BROWSER;
 
