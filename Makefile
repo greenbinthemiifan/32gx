@@ -1,63 +1,67 @@
+#---------------------------------------------------------------------------------
+# Target settings
+#---------------------------------------------------------------------------------
+TARGET		:= 32gx
+BUILD		:= build
+SOURCES		:= source source/ui core core/pico core/cpu core/libretro
+INCLUDES	:= include source core core/libretro
+DATA		:= 
+EXE			:= $(TARGET).elf
+
+#---------------------------------------------------------------------------------
+# Options
+#---------------------------------------------------------------------------------
+# Enable optimizations for performance on the 729 MHz Broadway CPU
+CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DGEKKO -DHW_RVL
+CXXFLAGS	:= $(CFLAGS) -std=gnu++98
+
+LDFLAGS		:= -g $(MACHDEP)
+
+# Libraries needed for Wii GX, Audio, and Pad/WPAD inputs
+LIBS		:= -lasnd -lfat -ogc -lwiiuse -lbte -lm
+
+#---------------------------------------------------------------------------------
+# Uncomment/Set devkitPPC paths if not already in your environment
+#---------------------------------------------------------------------------------
 ifeq ($(strip $(DEVKITPPC)),)
-$(error "Please set DEVKITPPC in your environment. export DEVKITPPC=<path to>devkitPPC")
+export DEVKITPPC	:= $(PORTABLE_DEVKITPPC)
 endif
 
-include $(DEVKITPPC)/wii_rules
+ifeq ($(strip $(DEVKITPRO)),)
+export DEVKITPRO	:= $(PORTABLE_DEVKITPRO)
+endif
 
-TARGET		:=	boot
-BUILD		:=	build
-SOURCES		:=	source
-DATA		:=	data
-INCLUDES	:=	
+# Include standard devkitPPC rules
+include $(DEVKITPRO)/libogc/Makefile_rules
 
-CFLAGS		:=	-g -O2 -Wall $(MACHDEP) $(INCLUDE)
-CXXFLAGS	:=	$(CFLAGS)
-LDFLAGS		:=	-g $(MACHDEP) -Wl,-Map,$(notdir $@).map
+#---------------------------------------------------------------------------------
+# Automatically find all C and Assembly source files in directories
+#---------------------------------------------------------------------------------
+CFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
+SFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
 
-LIBS		:=	-lfat -lwiiuse -lbte -logc -lm
+export VPATH	:= $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
 
-LIBDIRS		:=	$(PORTLIBS) $(LIBOGC)
+C_OBJS		:= $(CFILES:.c=.o)
+S_OBJS		:= $(SFILES:.s=.o)
+OBJS		:= $(C_OBJS) $(S_OBJS)
 
-ifneq ($(BUILD),$(notdir $(CURDIR)))
+#---------------------------------------------------------------------------------
+# Build Rules
+#---------------------------------------------------------------------------------
+.PHONY: all clean
 
-export OUTPUT	:=	$(CURDIR)/$(TARGET)
-export TOPDIR	:=	$(CURDIR)
-
-export VPATH	:=	$(foreach dir,$(SOURCES),$(CURDIR)/$(dir)) \
-					$(foreach dir,$(DATA),$(CURDIR)/$(dir))
-
-export DEPSDIR	:=	$(CURDIR)/$(BUILD)
-
-CFILES		:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-CPPFILES	:=	$(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.cpp)))
-
-export OFILES	:=	$(CPPFILES:.cpp=.o) $(CFILES:.c=.o)
-
-export INCLUDE	:=	$(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir)) \
-					$(foreach dir,$(LIBDIRS),-I$(dir)/include) \
-					-I$(CURDIR)/$(BUILD)
-
-export LIBPATHS	:=	$(foreach dir,$(LIBDIRS),-L$(dir)/lib)
-
-.PHONY: $(BUILD) clean all
-
-all: $(BUILD)
+all: $(BUILD) $(EXE)
 
 $(BUILD):
-	@[ -d $@ ] || mkdir -p $@
-	@$(MAKE) --no-print-directory -C $(BUILD) -f $(CURDIR)/Makefile
+	@mkdir -p $@
+
+$(EXE): $(OBJS:%=$(BUILD)/%)
+	@echo "Linking $(EXE)..."
+	@$(LD) $(LDFLAGS) $(OBJS:%=$(BUILD)/%) $(LIBS) -o $@
+	@elf2dol $(EXE) boot.dol
+	@echo "Done! Generated boot.dol for Homebrew Channel."
 
 clean:
-	@echo clean ...
-	@rm -fr $(BUILD) $(TARGET).elf $(TARGET).dol
-
-else
-
-DEPENDS	:=	$(OFILES:.o=.d)
-
-$(OUTPUT).dol: $(OUTPUT).elf
-$(OUTPUT).elf: $(OFILES)
-
--include $(DEPENDS)
-
-endif
+	@echo "Cleaning up..."
+	@rm -fr $(BUILD) $(EXE) boot.dol
