@@ -1,6 +1,3 @@
-# So Makefile knows what to do:
-export DEVKITPRO	:= /opt/devkitpro
-export DEVKITPPC	:= /opt/devkitpro/devkitPPC
 #---------------------------------------------------------------------------------
 # Target settings
 #---------------------------------------------------------------------------------
@@ -14,8 +11,11 @@ EXE			:= $(TARGET).elf
 #---------------------------------------------------------------------------------
 # Options
 #---------------------------------------------------------------------------------
-# Enable optimizations for performance on the 729 MHz Broadway CPU
-CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DGEKKO -DHW_RVL
+export DEVKITPRO	?= /opt/devkitpro
+export DEVKITPPC	?= /opt/devkitpro/devkitPPC
+
+MACHDEP		:= -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
+CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DHW_RVL
 CXXFLAGS	:= $(CFLAGS) -std=gnu++98
 
 LDFLAGS		:= -g $(MACHDEP)
@@ -23,22 +23,11 @@ LDFLAGS		:= -g $(MACHDEP)
 # Libraries needed for Wii GX, Audio, and Pad/WPAD inputs
 LIBS		:= -lasnd -lfat -ogc -lwiiuse -lbte -lm
 
-#---------------------------------------------------------------------------------
-# Uncomment/Set devkitPPC paths if not already in your environment
-#---------------------------------------------------------------------------------
-ifeq ($(strip $(DEVKITPPC)),)
-export DEVKITPPC	:= $(PORTABLE_DEVKITPPC)
-endif
-
-ifeq ($(strip $(DEVKITPRO)),)
-export DEVKITPRO	:= $(PORTABLE_DEVKITPRO)
-endif
-
-# Include standard devkitPPC rules
-include $(DEVKITPRO)/libogc/Makefile_rules
+# Include modern devkitPPC base rules
+include $(DEVKITPPC)/base_rules
 
 #---------------------------------------------------------------------------------
-# Automatically find all C and Assembly source files in directories
+# Automatically find all C source files in directories
 #---------------------------------------------------------------------------------
 CFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
 SFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
