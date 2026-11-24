@@ -1,3 +1,6 @@
+# So Makefile knows what to do:
+export DEVKITPRO	:= /opt/devkitpro
+export DEVKITPPC	:= /opt/devkitpro/devkitPPC
 #---------------------------------------------------------------------------------
 # Target settings
 #---------------------------------------------------------------------------------
