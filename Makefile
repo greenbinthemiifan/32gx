@@ -4,7 +4,7 @@
 TARGET		:= 32gx
 BUILD		:= build
 SOURCES		:= source source/ui core core/pico core/cpu core/libretro
-INCLUDES		:= include source core core/libretro
+INCLUDES	:= include source core core/libretro
 EXE			:= $(TARGET).elf
 
 #---------------------------------------------------------------------------------
@@ -20,7 +20,10 @@ LD			:= $(PREFIX)g++
 ELF2DOL		:= elf2dol
 
 MACHDEP		:= -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
-CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DHW_RVL $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
+
+# Explicit include paths for libogc headers like gccore.h
+LIBOGC_INC	:= -I$(DEVKITPRO)/libogc/include -I$(DEVKITPRO)/libogc/include/ogc
+CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DHW_RVL $(LIBOGC_INC) $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
 CXXFLAGS	:= $(CFLAGS) -std=gnu++98
 LDFLAGS		:= -g $(MACHDEP)
 
@@ -43,7 +46,6 @@ all: $(BUILD) $(EXE)
 $(BUILD):
 	@mkdir -p $@
 
-# Explicit pattern rule so make knows how to compile any source file into build/
 $(BUILD)/%.o: %.c
 	@echo "Compiling $(notdir $<)..."
 	@$(CC) $(CFLAGS) -c $< -o $@
