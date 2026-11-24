@@ -4,8 +4,7 @@
 TARGET		:= 32gx
 BUILD		:= build
 SOURCES		:= source source/ui core core/pico core/cpu core/libretro
-INCLUDES	:= include source core core/libretro
-DATA		:= 
+INCLUDES		:= include source core core/libretro
 EXE			:= $(TARGET).elf
 
 #---------------------------------------------------------------------------------
@@ -14,29 +13,25 @@ EXE			:= $(TARGET).elf
 export DEVKITPRO	?= /opt/devkitpro
 export DEVKITPPC	?= /opt/devkitpro/devkitPPC
 
-MACHDEP		:= -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
-CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DHW_RVL
-CXXFLAGS	:= $(CFLAGS) -std=gnu++98
+PREFIX		:= powerpc-eabi-
+CC			:= $(PREFIX)gcc
+CXX			:= $(PREFIX)g++
+LD			:= $(PREFIX)g++
+ELF2DOL		:= elf2dol
 
+MACHDEP		:= -DGEKKO -mrvl -mcpu=750 -meabi -mhard-float
+CFLAGS		:= -O3 -g -Wall $(MACHDEP) -D__LIBRETRO__ -DHW_RVL $(foreach dir,$(INCLUDES),-I$(CURDIR)/$(dir))
+CXXFLAGS	:= $(CFLAGS) -std=gnu++98
 LDFLAGS		:= -g $(MACHDEP)
 
-# Libraries needed for Wii GX, Audio, and Pad/WPAD inputs
+# Libraries needed for Wii GX, Audio, and Controllers
 LIBS		:= -lasnd -lfat -ogc -lwiiuse -lbte -lm
 
-# Include modern devkitPPC base rules
-include $(DEVKITPPC)/base_rules
-
-#---------------------------------------------------------------------------------
-# Automatically find all C source files in directories
-#---------------------------------------------------------------------------------
-CFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.c)))
-SFILES		:= $(foreach dir,$(SOURCES),$(notdir $(wildcard $(dir)/*.s)))
-
-export VPATH	:= $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
-
-C_OBJS		:= $(CFILES:.c=.o)
-S_OBJS		:= $(SFILES:.s=.o)
-OBJS		:= $(C_OBJS) $(S_OBJS)
+# Find all C source files across all source directories
+VPATH		:= $(foreach dir,$(SOURCES),$(CURDIR)/$(dir))
+CFILES		:= $(foreach dir,$(SOURCES),$(wildcard $(dir)/*.c))
+C_OBJS		:= $(notdir $(CFILES:.c=.o))
+OBJS		:= $(C_OBJS)
 
 #---------------------------------------------------------------------------------
 # Build Rules
@@ -48,10 +43,15 @@ all: $(BUILD) $(EXE)
 $(BUILD):
 	@mkdir -p $@
 
+# Explicit pattern rule so make knows how to compile any source file into build/
+$(BUILD)/%.o: %.c
+	@echo "Compiling $(notdir $<)..."
+	@$(CC) $(CFLAGS) -c $< -o $@
+
 $(EXE): $(OBJS:%=$(BUILD)/%)
 	@echo "Linking $(EXE)..."
 	@$(LD) $(LDFLAGS) $(OBJS:%=$(BUILD)/%) $(LIBS) -o $@
-	@elf2dol $(EXE) boot.dol
+	@$(ELF2DOL) $(EXE) boot.dol
 	@echo "Done! Generated boot.dol for Homebrew Channel."
 
 clean:
